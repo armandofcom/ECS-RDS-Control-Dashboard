@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>ECS & RDS Control Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #050816;
+      --bg-card: #0f172a;
+      --bg-card-soft: #111827;
+      --accent: #22c55e;
+      --accent-soft: rgba(34, 197, 94, 0.12);
+      --accent-danger: #ef4444;
+      --accent-danger-soft: rgba(239, 68, 68, 0.12);
+      --text: #f9fafb;
+      --text-muted: #9ca3af;
+      --border: #1f2937;
+      --shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.45);
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: radial-gradient(circle at top, #1f2937 0, #020617 45%, #020617 100%);
+      color: var(--text);
+    }
+
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px 16px 40px;
+    }
+
+    .header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+      align-items: center;
+    }
+
+    .title {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .pill {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 3px 9px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.8);
+      color: var(--text-muted);
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 6px;
+      max-width: 600px;
+    }
+
+    .btn {
+      border-radius: 999px;
+      border: 1px solid transparent;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: #022c22;
+      box-shadow: 0 12px 30px rgba(34, 197, 94, 0.4);
+      transition: transform 0.1s ease, box-shadow 0.15s ease, filter 0.1s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+      box-shadow: 0 18px 40px rgba(34, 197, 94, 0.55);
+    }
+
+    .btn-secondary {
+      background: rgba(15, 23, 42, 0.9);
+      border-color: var(--border);
+      color: var(--text);
+      box-shadow: none;
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #ef4444, #b91c1c);
+      color: #fee2e2;
+      box-shadow: 0 12px 30px rgba(239, 68, 68, 0.4);
+    }
+
+    .btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+      filter: none;
+    }
+
+    .icon {
+      font-size: 14px;
+    }
+
+    .card {
+      background: radial-gradient(circle at top left, #172554 0, var(--bg-card) 50%, var(--bg-card-soft) 100%);
+      border-radius: 22px;
+      border: 1px solid rgba(31, 41, 55, 0.9);
+      padding: 16px 16px 20px;
+      box-shadow: var(--shadow-soft);
+      backdrop-filter: blur(26px);
+    }
+
+    .login-card {
+      max-width: 420px;
+      margin: 0 auto 22px;
+    }
+
+    .login-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .login-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .tabs {
+      display: inline-flex;
+      gap: 4px;
+      padding: 4px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid var(--border);
+    }
+
+    .tab {
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 12px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+
+    .tab.active {
+      background: rgba(34, 197, 94, 0.1);
+      color: #bbf7d0;
+    }
+
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 10px;
+      align-items: center;
+    }
+
+    .input, .select {
+      background: rgba(15, 23, 42, 0.95);
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      padding: 7px 12px;
+      color: var(--text);
+      font-size: 13px;
+      min-width: 0;
+    }
+
+    .input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .select {
+      padding-right: 28px;
+    }
+
+    .badge {
+      font-size: 11px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      border: 1px solid rgba(31, 41, 55, 0.9);
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--text-muted);
+    }
+
+    .badge.on {
+      border-color: rgba(34, 197, 94, 0.35);
+      background: var(--accent-soft);
+      color: #bbf7d0;
+    }
+
+    .badge.off {
+      border-color: rgba(239, 68, 68, 0.4);
+      background: var(--accent-danger-soft);
+      color: #fecaca;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    thead {
+      background: linear-gradient(to right, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.7));
+    }
+
+    th, td {
+      padding: 8px 10px;
+      text-align: left;
+      border-bottom: 1px solid rgba(31, 41, 55, 0.85);
+    }
+
+    th {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    tbody tr:hover {
+      background: rgba(15, 23, 42, 0.6);
+    }
+
+    tbody tr.selected {
+      background: rgba(34, 197, 94, 0.12);
+    }
+
+    .status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      display: inline-block;
+      margin-right: 6px;
+    }
+
+    .dot-active {
+      background: #22c55e;
+      box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.3);
+    }
+
+    .dot-inactive {
+      background: #6b7280;
+      box-shadow: 0 0 0 4px rgba(75, 85, 99, 0.3);
+    }
+
+    .cluster-pill {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--text-muted);
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .service-name {
+      font-weight: 500;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      max-width: 240px;
+    }
+
+    .toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      color: var(--text);
+      font-size: 13px;
+      display: none;
+      box-shadow: var(--shadow-soft);
+      max-width: 340px;
+      z-index: 9999;
+    }
+
+    .toast.success {
+      border-color: rgba(34, 197, 94, 0.6);
+    }
+
+    .toast.error {
+      border-color: rgba(239, 68, 68, 0.6);
+    }
+
+    .toast strong {
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .footer {
+      margin-top: 10px;
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .login-error {
+      color: #fecaca;
+      font-size: 12px;
+      margin-top: 6px;
+      min-height: 16px;
+    }
+
+    .syscu-banner {
+      margin-top: 10px;
+      margin-bottom: 10px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      background: radial-gradient(circle at left, rgba(34, 197, 94, 0.18), rgba(15, 23, 42, 0.95));
+      color: #bbf7d0;
+      font-size: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .syscu-banner span {
+      opacity: 0.9;
+    }
+
+    .syscu-banner a {
+      color: #22c55e;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .syscu-banner a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 768px) {
+      .page {
+        padding-inline: 12px;
+      }
+      .card {
+        padding-inline: 10px;
+      }
+      .header {
+        align-items: flex-start;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <!-- Login -->
+    <section id="loginCard" class="card login-card">
+      <div class="login-title">Acceso al panel ECS & RDS</div>
+      <div class="login-subtitle">
+        Introduce tus credenciales de operaciones para gestionar servicios ECS y bases de datos RDS de forma segura.
+      </div>
+      <div style="margin-bottom:8px;">
+        <label for="loginUser">Usuario</label>
+        <input id="loginUser" class="input" type="text" autocomplete="off" />
+      </div>
+      <div style="margin-bottom:8px;">
+        <label for="loginPass">Contraseña</label>
+        <input id="loginPass" class="input" type="password" autocomplete="off" />
+      </div>
+      <button id="loginBtn" class="btn">
+        <span class="icon">🔐</span> Entrar
+      </button>
+      <div id="loginError" class="login-error"></div>
+    </section>
+
+    <!-- Dashboard -->
+    <div id="dashboard" style="display:none;">
+      <header class="header">
+        <div>
+          <div class="title">
+            <span>🛠️ ECS & RDS Control Dashboard</span>
+            <span class="pill">Lambda · Auth · ECS · RDS</span>
+          </div>
+          <p class="subtitle">
+            Panel interno para operaciones: start/stop de servicios ECS y bases de datos RDS con autenticación, tokens de vida corta y visibilidad centralizada.
+          </p>
+        </div>
+        <div class="tabs">
+          <button id="tabEcs" class="tab active">ECS Services</button>
+          <button id="tabRds" class="tab">RDS Instances</button>
+        </div>
+      </header>
+
+      <!-- Banner SysCu -->
+      <div class="syscu-banner">
+        <span>🚀 Optimizado y automatizado por</span>
+        <a href="https://www.syscu.es/?utm_source=ecs-rds-dashboard&utm_medium=internal_tool&utm_campaign=ops"
+           target="_blank"
+           rel="noopener noreferrer">
+          SysCu · La nube a tu medida
+        </a>
+      </div>
+
+      <!-- ECS Section -->
+      <section id="ecsSection" class="card">
+        <div class="header" style="margin-bottom:10px;">
+          <div style="font-size:14px;font-weight:500;">Servicios ECS</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button id="reloadEcsBtn" class="btn-secondary btn">
+              <span class="icon">🔄</span> Recargar
+            </button>
+            <button id="startEcsBtn" class="btn">
+              <span class="icon">▶️</span> Start seleccionados
+            </button>
+            <button id="stopEcsBtn" class="btn btn-danger">
+              <span class="icon">⏹</span> Stop seleccionados
+            </button>
+          </div>
+        </div>
+
+        <div class="filters">
+          <input
+            id="searchEcsInput"
+            class="input"
+            type="text"
+            placeholder="Filtrar ECS por servicio o cluster…"
+          />
+          <select id="ecsClusterFilter" class="select">
+            <option value="">Cluster: Todos</option>
+          </select>
+          <select id="ecsStatusFilter" class="select">
+            <option value="all">Estado: Todos</option>
+            <option value="running">Con desiredCount &gt; 0</option>
+            <option value="stopped">Con desiredCount = 0</option>
+          </select>
+          <span id="ecsStatsBadge" class="badge">0 servicios</span>
+        </div>
+
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th><input type="checkbox" id="ecsSelectAll" /></th>
+                <th>Servicio</th>
+                <th>Cluster</th>
+                <th>Desired / Running</th>
+                <th>Launch</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody id="ecsBody"></tbody>
+          </table>
+        </div>
+
+        <div class="footer">
+          <span id="ecsLastUpdated">ECS: sincronización pendiente…</span>
+          <span id="ecsSelectionInfo">0 servicios seleccionados</span>
+        </div>
+      </section>
+
+      <!-- RDS Section -->
+      <section id="rdsSection" class="card" style="margin-top:16px; display:none;">
+        <div class="header" style="margin-bottom:10px;">
+          <div style="font-size:14px;font-weight:500;">Instancias RDS</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button id="reloadRdsBtn" class="btn-secondary btn">
+              <span class="icon">🔄</span> Recargar
+            </button>
+            <button id="startRdsBtn" class="btn">
+              <span class="icon">▶️</span> Start seleccionados
+            </button>
+            <button id="stopRdsBtn" class="btn btn-danger">
+              <span class="icon">⏹</span> Stop seleccionados
+            </button>
+          </div>
+        </div>
+
+        <div class="filters">
+          <input
+            id="searchRdsInput"
+            class="input"
+            type="text"
+            placeholder="Filtrar RDS por identificador, engine…"
+          />
+          <select id="rdsEngineFilter" class="select">
+            <option value="">Engine: Todos</option>
+          </select>
+          <select id="rdsStatusFilter" class="select">
+            <option value="all">Estado: Todos</option>
+            <option value="available">Sólo available</option>
+            <option value="stopped">Sólo stopped</option>
+          </select>
+          <span id="rdsStatsBadge" class="badge">0 instancias</span>
+        </div>
+
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th><input type="checkbox" id="rdsSelectAll" /></th>
+                <th>DB Identifier</th>
+                <th>Engine</th>
+                <th>Class</th>
+                <th>AZ / Multi-AZ</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="rdsBody"></tbody>
+          </table>
+        </div>
+
+        <div class="footer">
+          <span id="rdsLastUpdated">RDS: sincronización pendiente…</span>
+          <span id="rdsSelectionInfo">0 instancias seleccionadas</span>
+        </div>
+      </section>
+    </div>
+
+    <div id="toast" class="toast"></div>
+  </div>
+
+  <script>
+    // URL base de la Lambda / API (HTTPS)
+    const API_BASE_URL = "https://URL_DE_TU_API.lambda-url.region.on.aws";
+
+    const auth = {
+      user: null,
+      role: null,
+      token: null,
+      loggedIn: false,
+    };
+
+    const ecsState = {
+      raw: [],
+      filtered: [],
+      selected: new Set(),
+    };
+
+    const rdsState = {
+      raw: [],
+      filtered: [],
+      selected: new Set(),
+    };
+
+    let currentTab = "ecs";
+
+    // DOM refs
+    const loginCard = document.getElementById("loginCard");
+    const dashboard = document.getElementById("dashboard");
+    const loginUser = document.getElementById("loginUser");
+    const loginPass = document.getElementById("loginPass");
+    const loginBtn = document.getElementById("loginBtn");
+    const loginError = document.getElementById("loginError");
+
+    const tabEcs = document.getElementById("tabEcs");
+    const tabRds = document.getElementById("tabRds");
+    const ecsSection = document.getElementById("ecsSection");
+    const rdsSection = document.getElementById("rdsSection");
+
+    const toastEl = document.getElementById("toast");
+
+    // ECS refs
+    const ecsBody = document.getElementById("ecsBody");
+    const searchEcsInput = document.getElementById("searchEcsInput");
+    const ecsClusterFilter = document.getElementById("ecsClusterFilter");
+    const ecsStatusFilter = document.getElementById("ecsStatusFilter");
+    const ecsStatsBadge = document.getElementById("ecsStatsBadge");
+    const ecsLastUpdated = document.getElementById("ecsLastUpdated");
+    const ecsSelectionInfo = document.getElementById("ecsSelectionInfo");
+    const reloadEcsBtn = document.getElementById("reloadEcsBtn");
+    const startEcsBtn = document.getElementById("startEcsBtn");
+    const stopEcsBtn = document.getElementById("stopEcsBtn");
+    const ecsSelectAll = document.getElementById("ecsSelectAll");
+
+    // RDS refs
+    const rdsBody = document.getElementById("rdsBody");
+    const searchRdsInput = document.getElementById("searchRdsInput");
+    const rdsEngineFilter = document.getElementById("rdsEngineFilter");
+    const rdsStatusFilter = document.getElementById("rdsStatusFilter");
+    const rdsStatsBadge = document.getElementById("rdsStatsBadge");
+    const rdsLastUpdated = document.getElementById("rdsLastUpdated");
+    const rdsSelectionInfo = document.getElementById("rdsSelectionInfo");
+    const reloadRdsBtn = document.getElementById("reloadRdsBtn");
+    const startRdsBtn = document.getElementById("startRdsBtn");
+    const stopRdsBtn = document.getElementById("stopRdsBtn");
+    const rdsSelectAll = document.getElementById("rdsSelectAll");
+
+    function showToast(message, type = "success") {
+      toastEl.className = "toast " + type;
+      toastEl.innerHTML = "<strong>" + (type === "success" ? "OK" : "Error") + "</strong>" + message;
+      toastEl.style.display = "block";
+      setTimeout(() => {
+        toastEl.style.display = "none";
+      }, 3500);
+    }
+
+    function buildUrl(path, params = {}) {
+      const url = new URL(API_BASE_URL + path);
+      for (const [key, value] of Object.entries(params)) {
+        if (value !== undefined && value !== null && value !== "") {
+          url.searchParams.set(key, value);
+        }
+      }
+      return url.toString();
+    }
+
+    function authHeader() {
+      return auth.token ? { Authorization: "Bearer " + auth.token } : {};
+    }
+
+    // ===== Tabs =====
+    function setTab(tab) {
+      currentTab = tab;
+      if (tab === "ecs") {
+        tabEcs.classList.add("active");
+        tabRds.classList.remove("active");
+        ecsSection.style.display = "block";
+        rdsSection.style.display = "none";
+      } else {
+        tabRds.classList.add("active");
+        tabEcs.classList.remove("active");
+        ecsSection.style.display = "none";
+        rdsSection.style.display = "block";
+      }
+    }
+
+    tabEcs.addEventListener("click", () => {
+      setTab("ecs");
+    });
+    tabRds.addEventListener("click", () => {
+      setTab("rds");
+      if (rdsState.raw.length === 0) {
+        fetchRdsInstances();
+      }
+    });
+
+    // ===== ECS Logic =====
+    function updateEcsStats() {
+      ecsStatsBadge.textContent = `${ecsState.filtered.length} servicios`;
+      ecsSelectionInfo.textContent = `${ecsState.selected.size} servicios seleccionados`;
+      startEcsBtn.disabled = ecsState.selected.size === 0;
+      stopEcsBtn.disabled = ecsState.selected.size === 0;
+      ecsSelectAll.checked =
+        ecsState.filtered.length > 0 &&
+        ecsState.filtered.every((svc) => ecsState.selected.has(svc.clusterArn + "|" + svc.serviceName));
+    }
+
+    function updateEcsClusterFilterOptions() {
+      const clusters = Array.from(new Set(ecsState.raw.map((s) => s.clusterName))).sort();
+      ecsClusterFilter.innerHTML = '<option value="">Cluster: Todos</option>';
+      clusters.forEach((c) => {
+        const opt = document.createElement("option");
+        opt.value = c;
+        opt.textContent = c;
+        ecsClusterFilter.appendChild(opt);
+      });
+    }
+
+    function renderEcsTable() {
+      ecsBody.innerHTML = "";
+      for (const svc of ecsState.filtered) {
+        const key = svc.clusterArn + "|" + svc.serviceName;
+        const tr = document.createElement("tr");
+        if (ecsState.selected.has(key)) {
+          tr.classList.add("selected");
+        }
+
+        const desired = svc.desiredCount ?? 0;
+        const running = svc.runningCount ?? 0;
+        const isOn = desired > 0;
+
+        tr.innerHTML = `
+          <td>
+            <input type="checkbox" data-key="${key}" ${ecsState.selected.has(key) ? "checked" : ""} />
+          </td>
+          <td>
+            <div class="service-name" title="${svc.serviceName}">
+              ${svc.serviceName}
+            </div>
+          </td>
+          <td>
+            <span class="cluster-pill" title="${svc.clusterName}">
+              ${svc.clusterName}
+            </span>
+          </td>
+          <td>${desired} / ${running}</td>
+          <td>${svc.launchType || "-"}</td>
+          <td>
+            <span class="status-dot ${isOn ? "dot-active" : "dot-inactive"}"></span>
+            <span class="badge ${isOn ? "on" : "off"}">
+              ${isOn ? "Activo" : "Parado"}
+            </span>
+          </td>
+        `;
+
+        tr.addEventListener("click", (e) => {
+          if (e.target.tagName.toLowerCase() === "input") return;
+          const checkbox = tr.querySelector("input[type=checkbox]");
+          checkbox.checked = !checkbox.checked;
+          if (checkbox.checked) {
+            ecsState.selected.add(key);
+          } else {
+            ecsState.selected.delete(key);
+          }
+          tr.classList.toggle("selected", checkbox.checked);
+          updateEcsStats();
+        });
+
+        tr.querySelector("input[type=checkbox]").addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (e.target.checked) {
+            ecsState.selected.add(key);
+          } else {
+            ecsState.selected.delete(key);
+          }
+          tr.classList.toggle("selected", e.target.checked);
+          updateEcsStats();
+        });
+
+        ecsBody.appendChild(tr);
+      }
+      updateEcsStats();
+    }
+
+    function applyEcsFilters() {
+      const term = (searchEcsInput.value || "").toLowerCase().trim();
+      const status = ecsStatusFilter.value;
+      const clusterName = ecsClusterFilter.value;
+
+      ecsState.filtered = ecsState.raw.filter((svc) => {
+        const matchesTerm =
+          !term ||
+          svc.serviceName.toLowerCase().includes(term) ||
+          svc.clusterName.toLowerCase().includes(term);
+
+        const desired = svc.desiredCount ?? 0;
+        const isRunning = desired > 0;
+
+        let matchesStatus = true;
+        if (status === "running") {
+          matchesStatus = isRunning;
+        } else if (status === "stopped") {
+          matchesStatus = !isRunning;
+        }
+
+        let matchesCluster = true;
+        if (clusterName) {
+          matchesCluster = svc.clusterName === clusterName;
+        }
+
+        return matchesTerm && matchesStatus && matchesCluster;
+      });
+
+      renderEcsTable();
+    }
+
+    async function fetchEcsServices() {
+      reloadEcsBtn.disabled = true;
+      reloadEcsBtn.innerHTML = "Cargando…";
+      try {
+        const params = {};
+        if (ecsClusterFilter.value) {
+          params.cluster = ecsClusterFilter.value;
+        }
+        const url = buildUrl("/services", params);
+        const resp = await fetch(url, {
+          headers: {
+            "Content-Type": "application/json",
+            ...authHeader(),
+          },
+        });
+
+        if (resp.status === 401) {
+          auth.user = null;
+          auth.role = null;
+          auth.token = null;
+          auth.loggedIn = false;
+          dashboard.style.display = "none";
+          loginCard.style.display = "block";
+          loginError.textContent = "Sesión expirada o no autorizada. Vuelve a iniciar sesión.";
+          throw new Error("Unauthorized");
+        }
+
+        if (!resp.ok) {
+          throw new Error(`API devolvió ${resp.status}`);
+        }
+
+        const data = await resp.json();
+        const services = data.services || [];
+        ecsState.raw = services
+          .map((s) => ({
+            ...s,
+            clusterName: s.clusterName || (s.clusterArn ? s.clusterArn.split("/").pop() : "unknown"),
+          }))
+          .sort(
+            (a, b) =>
+              a.clusterName.localeCompare(b.clusterName) ||
+              a.serviceName.localeCompare(b.serviceName)
+          );
+
+        ecsState.filtered = [...ecsState.raw];
+        ecsState.selected.clear();
+        updateEcsClusterFilterOptions();
+        renderEcsTable();
+
+        const now = new Date();
+        ecsLastUpdated.textContent = `ECS actualizado: ${now.toLocaleTimeString()}`;
+        showToast("Servicios ECS cargados correctamente.");
+      } catch (err) {
+        console.error(err);
+        showToast("No se pudo cargar ECS: " + err.message, "error");
+      } finally {
+        reloadEcsBtn.disabled = false;
+        reloadEcsBtn.innerHTML = "🔄 Recargar";
+      }
+    }
+
+    async function bulkEcsAction(action) {
+      if (ecsState.selected.size === 0) return;
+      const confirmMsg =
+        action === "stop"
+          ? "Vas a poner desiredCount = 0 en los servicios ECS seleccionados. ¿Seguro?"
+          : "Vas a hacer START (desiredCount = 1 por defecto) en los servicios ECS seleccionados. ¿Seguro?";
+      if (!confirm(confirmMsg)) return;
+
+      startEcsBtn.disabled = true;
+      stopEcsBtn.disabled = true;
+
+      try {
+        const requests = [];
+        for (const key of ecsState.selected) {
+          const [clusterArn, serviceName] = key.split("|");
+          const payload = {
+            clusterArn,
+            serviceName,
+            action,
+          };
+          if (action === "start") {
+            payload.desiredCount = 1;
+          }
+
+          const url = buildUrl("/action");
+          requests.push(
+            fetch(url, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                ...authHeader(),
+              },
+              body: JSON.stringify(payload),
+            })
+          );
+        }
+
+        const responses = await Promise.all(requests);
+        const errors = [];
+        for (const r of responses) {
+          if (!r.ok) {
+            const t = await r.text();
+            errors.push(`${r.status}: ${t}`);
+          }
+        }
+
+        if (errors.length > 0) {
+          showToast("Algunas operaciones ECS fallaron: " + errors.join(" | "), "error");
+        } else {
+          showToast(`Acción ECS '${action}' ejecutada sobre ${ecsState.selected.size} servicio(s).`);
+        }
+
+        await fetchEcsServices();
+      } catch (err) {
+        console.error(err);
+        showToast("Error en acción ECS: " + err.message, "error");
+      } finally {
+        startEcsBtn.disabled = false;
+        stopEcsBtn.disabled = false;
+      }
+    }
+
+    // ===== RDS Logic =====
+    function updateRdsStats() {
+      rdsStatsBadge.textContent = `${rdsState.filtered.length} instancias`;
+      rdsSelectionInfo.textContent = `${rdsState.selected.size} instancias seleccionadas`;
+      startRdsBtn.disabled = rdsState.selected.size === 0;
+      stopRdsBtn.disabled = rdsState.selected.size === 0;
+      rdsSelectAll.checked =
+        rdsState.filtered.length > 0 &&
+        rdsState.filtered.every((db) => rdsState.selected.has(db.dbInstanceIdentifier));
+    }
+
+    function updateRdsEngineFilterOptions() {
+      const engines = Array.from(new Set(rdsState.raw.map((d) => d.engine))).filter(Boolean).sort();
+      rdsEngineFilter.innerHTML = '<option value="">Engine: Todos</option>';
+      engines.forEach((e) => {
+        const opt = document.createElement("option");
+        opt.value = e;
+        opt.textContent = e;
+        rdsEngineFilter.appendChild(opt);
+      });
+    }
+
+    function renderRdsTable() {
+      rdsBody.innerHTML = "";
+      for (const db of rdsState.filtered) {
+        const key = db.dbInstanceIdentifier;
+        const tr = document.createElement("tr");
+        if (rdsState.selected.has(key)) {
+          tr.classList.add("selected");
+        }
+
+        const status = (db.status || "").toLowerCase();
+        const isAvailable = status === "available";
+        const isStopped = status === "stopped";
+
+        tr.innerHTML = `
+          <td>
+            <input type="checkbox" data-key="${key}" ${rdsState.selected.has(key) ? "checked" : ""} />
+          </td>
+          <td>
+            <div class="service-name" title="${db.dbInstanceIdentifier}">
+              ${db.dbInstanceIdentifier}
+            </div>
+          </td>
+          <td>${db.engine || "-"}</td>
+          <td>${db.dbInstanceClass || "-"}</td>
+          <td>${db.availabilityZone || "-"}${db.multiAZ ? " · Multi-AZ" : ""}</td>
+          <td>
+            <span class="status-dot ${
+              isAvailable ? "dot-active" : isStopped ? "dot-inactive" : "dot-inactive"
+            }"></span>
+            <span class="badge ${
+              isAvailable ? "on" : isStopped ? "off" : ""
+            }">
+              ${db.status || "-"}
+            </span>
+          </td>
+        `;
+
+        tr.addEventListener("click", (e) => {
+          if (e.target.tagName.toLowerCase() === "input") return;
+          const checkbox = tr.querySelector("input[type=checkbox]");
+          checkbox.checked = !checkbox.checked;
+          if (checkbox.checked) {
+            rdsState.selected.add(key);
+          } else {
+            rdsState.selected.delete(key);
+          }
+          tr.classList.toggle("selected", checkbox.checked);
+          updateRdsStats();
+        });
+
+        tr.querySelector("input[type=checkbox]").addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (e.target.checked) {
+            rdsState.selected.add(key);
+          } else {
+            rdsState.selected.delete(key);
+          }
+          tr.classList.toggle("selected", e.target.checked);
+          updateRdsStats();
+        });
+
+        rdsBody.appendChild(tr);
+      }
+      updateRdsStats();
+    }
+
+    function applyRdsFilters() {
+      const term = (searchRdsInput.value || "").toLowerCase().trim();
+      const engine = rdsEngineFilter.value;
+      const statusFilter = rdsStatusFilter.value;
+
+      rdsState.filtered = rdsState.raw.filter((db) => {
+        const matchesTerm =
+          !term ||
+          (db.dbInstanceIdentifier || "").toLowerCase().includes(term) ||
+          (db.engine || "").toLowerCase().includes(term);
+
+        let matchesEngine = true;
+        if (engine) {
+          matchesEngine = db.engine === engine;
+        }
+
+        let matchesStatus = true;
+        const status = (db.status || "").toLowerCase();
+        if (statusFilter === "available") {
+          matchesStatus = status === "available";
+        } else if (statusFilter === "stopped") {
+          matchesStatus = status === "stopped";
+        }
+
+        return matchesTerm && matchesEngine && matchesStatus;
+      });
+
+      renderRdsTable();
+    }
+
+    async function fetchRdsInstances() {
+      reloadRdsBtn.disabled = true;
+      reloadRdsBtn.innerHTML = "Cargando…";
+      try {
+        const params = {};
+        if (rdsEngineFilter.value) {
+          params.engine = rdsEngineFilter.value;
+        }
+        if (rdsStatusFilter.value !== "all") {
+          params.status = rdsStatusFilter.value;
+        }
+        const url = buildUrl("/rds/instances", params);
+        const resp = await fetch(url, {
+          headers: {
+            "Content-Type": "application/json",
+            ...authHeader(),
+          },
+        });
+
+        if (resp.status === 401) {
+          auth.user = null;
+          auth.role = null;
+          auth.token = null;
+          auth.loggedIn = false;
+          dashboard.style.display = "none";
+          loginCard.style.display = "block";
+          loginError.textContent = "Sesión expirada o no autorizada. Vuelve a iniciar sesión.";
+          throw new Error("Unauthorized");
+        }
+
+        if (!resp.ok) {
+          throw new Error(`API devolvió ${resp.status}`);
+        }
+
+        const data = await resp.json();
+        const instances = data.instances || [];
+        rdsState.raw = instances
+          .map((d) => ({
+            ...d,
+            engine: d.engine || d.Engine || "",
+          }))
+          .sort((a, b) => a.dbInstanceIdentifier.localeCompare(b.dbInstanceIdentifier));
+
+        rdsState.filtered = [...rdsState.raw];
+        rdsState.selected.clear();
+        updateRdsEngineFilterOptions();
+        renderRdsTable();
+
+        const now = new Date();
+        rdsLastUpdated.textContent = `RDS actualizado: ${now.toLocaleTimeString()}`;
+        showToast("Instancias RDS cargadas correctamente.");
+      } catch (err) {
+        console.error(err);
+        showToast("No se pudo cargar RDS: " + err.message, "error");
+      } finally {
+        reloadRdsBtn.disabled = false;
+        reloadRdsBtn.innerHTML = "🔄 Recargar";
+      }
+    }
+
+    async function bulkRdsAction(action) {
+      if (rdsState.selected.size === 0) return;
+      const confirmMsg =
+        action === "stop"
+          ? "Vas a intentar parar (stop) las instancias RDS seleccionadas. ¿Seguro?"
+          : "Vas a intentar arrancar (start) las instancias RDS seleccionadas. ¿Seguro?";
+      if (!confirm(confirmMsg)) return;
+
+      startRdsBtn.disabled = true;
+      stopRdsBtn.disabled = true;
+
+      try {
+        const requests = [];
+        for (const key of rdsState.selected) {
+          const payload = {
+            dbInstanceIdentifier: key,
+            action,
+          };
+
+          const url = buildUrl("/rds/action");
+          requests.push(
+            fetch(url, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                ...authHeader(),
+              },
+              body: JSON.stringify(payload),
+            })
+          );
+        }
+
+        const responses = await Promise.all(requests);
+        const errors = [];
+        for (const r of responses) {
+          if (!r.ok) {
+            const t = await r.text();
+            errors.push(`${r.status}: ${t}`);
+          }
+        }
+
+        if (errors.length > 0) {
+          showToast("Algunas operaciones RDS fallaron: " + errors.join(" | "), "error");
+        } else {
+          showToast(
+            `Acción RDS '${action}' ejecutada sobre ${rdsState.selected.size} instancia(s).`
+          );
+        }
+
+        await fetchRdsInstances();
+      } catch (err) {
+        console.error(err);
+        showToast("Error en acción RDS: " + err.message, "error");
+      } finally {
+        startRdsBtn.disabled = false;
+        stopRdsBtn.disabled = false;
+      }
+    }
+
+    // ===== Login =====
+    loginBtn.addEventListener("click", async () => {
+      const user = (loginUser.value || "").trim();
+      const pass = loginPass.value || "";
+
+      loginError.textContent = "";
+      if (!user || !pass) {
+        loginError.textContent = "Usuario y contraseña son obligatorios.";
+        return;
+      }
+
+      loginBtn.disabled = true;
+      loginBtn.innerHTML = "Validando…";
+
+      try {
+        const resp = await fetch(API_BASE_URL + "/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user, pass }),
+        });
+
+        if (!resp.ok) {
+          loginError.textContent = "Credenciales inválidas.";
+          throw new Error("Login failed: " + (await resp.text()));
+        }
+
+        const data = await resp.json();
+        auth.user = data.user;
+        auth.role = data.role;
+        auth.token = data.token;
+        auth.loggedIn = true;
+
+        loginCard.style.display = "none";
+        dashboard.style.display = "block";
+        loginUser.value = "";
+        loginPass.value = "";
+        loginError.textContent = "";
+
+        // Cargar ECS por defecto
+        setTab("ecs");
+        await fetchEcsServices();
+      } catch (e) {
+        console.error(e);
+      } finally {
+        loginBtn.disabled = false;
+        loginBtn.innerHTML = '<span class="icon">🔐</span> Entrar';
+      }
+    });
+
+    // Eventos ECS
+    searchEcsInput.addEventListener("input", () => applyEcsFilters());
+    ecsClusterFilter.addEventListener("change", () => applyEcsFilters());
+    ecsStatusFilter.addEventListener("change", () => applyEcsFilters());
+    reloadEcsBtn.addEventListener("click", () => fetchEcsServices());
+    startEcsBtn.addEventListener("click", () => bulkEcsAction("start"));
+    stopEcsBtn.addEventListener("click", () => bulkEcsAction("stop"));
+    ecsSelectAll.addEventListener("change", (e) => {
+      const checked = e.target.checked;
+      ecsState.selected.clear();
+      if (checked) {
+        for (const svc of ecsState.filtered) {
+          const key = svc.clusterArn + "|" + svc.serviceName;
+          ecsState.selected.add(key);
+        }
+      }
+      renderEcsTable();
+    });
+
+    // Eventos RDS
+    searchRdsInput.addEventListener("input", () => applyRdsFilters());
+    rdsEngineFilter.addEventListener("change", () => applyRdsFilters());
+    rdsStatusFilter.addEventListener("change", () => {
+      if (rdsState.raw.length > 0) {
+        applyRdsFilters();
+      }
+    });
+    reloadRdsBtn.addEventListener("click", () => fetchRdsInstances());
+    startRdsBtn.addEventListener("click", () => bulkRdsAction("start"));
+    stopRdsBtn.addEventListener("click", () => bulkRdsAction("stop"));
+    rdsSelectAll.addEventListener("change", (e) => {
+      const checked = e.target.checked;
+      rdsState.selected.clear();
+      if (checked) {
+        for (const db of rdsState.filtered) {
+          rdsState.selected.add(db.dbInstanceIdentifier);
+        }
+      }
+      renderRdsTable();
+    });
+  </script>
+</body>
+</html>
